@@ -65,16 +65,21 @@
         /* 花瓣通用樣式 */
         .petal {
             position: absolute;
-            width: 45px;
             height: 80px;
             background: linear-gradient(to bottom, #ff85a2, #ff477e);
             border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
             top: 10px;
-            left: 77px;
             transform-origin: center 90px;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.5s ease-out;
+            transition: transform 0.2s, opacity 0.5s ease-out, width 0.2s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 【新增】乾枯花瓣的樣式（咖啡色系、微微內縮營造乾癟感） */
+        .petal.withered {
+            background: linear-gradient(to bottom, #b5835a, #7f5539);
+            border-radius: 40% 40% 50% 50% / 30% 30% 70% 70%;
+            transform: scaleX(0.9);
         }
 
         .petal:hover {
@@ -84,7 +89,7 @@
         /* 花瓣消失動畫 */
         .petal.detached {
             opacity: 0;
-            transform: translateY(100px) rotate(30deg) scale(0.8) !important;
+            transform: translateY(120px) rotate(45deg) scale(0.7) !important;
             pointer-events: none;
         }
 
@@ -134,56 +139,81 @@
         const statusText = document.getElementById('status-text');
         const restartBtn = document.getElementById('restart-btn');
         
-        // 總共設計 8 片花瓣（你可以自己改數量）
-        const totalPetals = 8; 
-        let remainingPetals = totalPetals;
-        let currentState = true; // true = 愛, false = 不愛
+        let totalPetals; 
+        let remainingPetals;
+        let currentState = true;
 
-        // 初始化/重置花朵
         function initFlower() {
-            // 清除舊的花瓣
             const oldPetals = document.querySelectorAll('.petal');
             oldPetals.forEach(p => p.remove());
 
+            // 隨機範圍：4 到 30 片
+            totalPetals = Math.floor(Math.random() * (30 - 4 + 1)) + 4; 
             remainingPetals = totalPetals;
+
+            // 動態計算花瓣寬度與位置
+            const petalWidth = Math.max(12, Math.min(50, 350 / totalPetals));
+            const petalLeft = 100 - (petalWidth / 2);
+
             statusText.innerText = "點擊花瓣開始占卜";
             statusText.style.color = "#ff477e";
             restartBtn.style.display = 'none';
 
-            // 亂數決定這一次總體是愛還是不愛（讓結果每次都不同）
-            // 由於每次點擊會切換狀態，我們倒推第一步的狀態
             const finalLove = Math.random() > 0.5;
-            // 確保最後一片拔完的狀態符合 finalLove
             currentState = (totalPetals % 2 === 1) ? !finalLove : finalLove;
 
-            // 動態生成花瓣並旋轉成一朵花
             for (let i = 0; i < totalPetals; i++) {
                 const petal = document.createElement('div');
                 petal.classList.add('petal');
                 
-                // 計算每片花瓣的角度
+                // 【核心修改】隨機讓某些花瓣變成乾枯花瓣（這裡設定 20% 的機率是乾枯的）
+                // 且為了好玩，至少確保總片數大於 5 時，有機會出現乾枯花瓣
+                const isWithered = Math.random() < 0.20; 
+                if (isWithered) {
+                    petal.classList.add('withered');
+                    petal.dataset.type = 'withered'; // 標記它是乾枯的
+                } else {
+                    petal.dataset.type = 'normal';
+                }
+                
+                petal.style.width = `${petalWidth}px`;
+                petal.style.left = `${petalLeft}px`;
+                
                 const angle = (360 / totalPetals) * i;
                 petal.style.transform = `rotate(${angle}deg)`;
 
-                // 綁定點擊事件
                 petal.addEventListener('click', function() {
                     if (!petal.classList.contains('detached')) {
+                        const myType = petal.dataset.type; // 記錄被拔掉的這片是什麼類型
                         petal.classList.add('detached');
                         remainingPetals--;
                         
-                        // 切換狀態
                         currentState = !currentState;
                         
                         if (remainingPetals > 0) {
-                            statusText.innerText = currentState ? "愛我..." : "不愛我...";
-                        } else {
-                            // 拔完了，顯示最終結果！
-                            if (currentState) {
-                                statusText.innerText = "❤️ 恭喜！他/她超級愛你！ ❤️";
-                                statusText.style.color = "#d90429";
+                            // 拔的過程中，如果是乾枯的，給個小吐槽，否則正常顯示
+                            if (myType === 'withered') {
+                                statusText.innerText = "🪺 呃...這瓣乾枯了...";
                             } else {
-                                statusText.innerText = "💔 哎呀...看來可能只是錯覺？ 💔";
-                                statusText.style.color = "#6c757d";
+                                statusText.innerText = currentState ? "愛我..." : "不愛我...";
+                            }
+                        } else {
+                            // 【核心修改】最後一片被拔完後的判定邏輯
+                            if (myType === 'withered') {
+                                // 命中注定：最後一片是乾枯的！
+                                statusText.innerText = "🍂 哎呀！最後一片是乾枯花瓣，命運模糊不清...請再測一次！ 🍂";
+                                statusText.style.color = "#7f5539";
+                                restartBtn.innerText = "重新占卜";
+                            } else {
+                                // 正常結局
+                                if (currentState) {
+                                    statusText.innerText = "❤️ 恭喜！他/她超級愛你！ ❤️";
+                                    statusText.style.color = "#d90429";
+                                } else {
+                                    statusText.innerText = "💔 哎呀...看來可能只是錯覺？ 💔";
+                                    statusText.style.color = "#6c757d";
+                                }
+                                restartBtn.innerText = "再測一次";
                             }
                             restartBtn.style.display = 'block';
                         }
@@ -194,7 +224,6 @@
             }
         }
 
-        // 網頁載入時初始化
         initFlower();
     </script>
 </body>
