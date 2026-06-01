@@ -10,3 +10,192 @@
     = =
   </body>
 </html>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戀愛占卜：拔花瓣模擬器</title>
+    <style>
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #ffe5ec, #ffc2d1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #4a4a4a;
+        }
+
+        h1 {
+            color: #ff477e;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #7a7a7a;
+            margin-bottom: 40px;
+        }
+
+        /* 花朵容器 */
+        .flower-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 50px;
+        }
+
+        /* 花蕊 */
+        .flower-center {
+            position: absolute;
+            top: 75px;
+            left: 75px;
+            width: 50px;
+            height: 50px;
+            background-color: #ffe600;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 花瓣通用樣式 */
+        .petal {
+            position: absolute;
+            width: 45px;
+            height: 80px;
+            background: linear-gradient(to bottom, #ff85a2, #ff477e);
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            top: 10px;
+            left: 77px;
+            transform-origin: center 90px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.5s ease-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .petal:hover {
+            filter: brightness(1.1);
+        }
+
+        /* 花瓣消失動畫 */
+        .petal.detached {
+            opacity: 0;
+            transform: translateY(100px) rotate(30deg) scale(0.8) !important;
+            pointer-events: none;
+        }
+
+        /* 顯示訊息的區塊 */
+        #status-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff477e;
+            min-height: 40px;
+            text-align: center;
+        }
+
+        /* 重來按鈕 */
+        #restart-btn {
+            margin-top: 20px;
+            padding: 10px 25px;
+            font-size: 1rem;
+            background-color: #ff477e;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            transition: background 0.2s;
+        }
+
+        #restart-btn:hover {
+            background-color: #ff7096;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>他/她到底愛不愛我？</h1>
+    <div class="subtitle">點擊花瓣，讓命運來決定...</div>
+
+    <div class="flower-container" id="flower">
+        <div class="flower-center"></div>
+        </div>
+
+    <div id="status-text">點擊花瓣開始占卜</div>
+    <button id="restart-btn" onclick="initFlower()">再測一次</button>
+
+    <script>
+        const flower = document.getElementById('flower');
+        const statusText = document.getElementById('status-text');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // 總共設計 8 片花瓣（你可以自己改數量）
+        const totalPetals = 8; 
+        let remainingPetals = totalPetals;
+        let currentState = true; // true = 愛, false = 不愛
+
+        // 初始化/重置花朵
+        function initFlower() {
+            // 清除舊的花瓣
+            const oldPetals = document.querySelectorAll('.petal');
+            oldPetals.forEach(p => p.remove());
+
+            remainingPetals = totalPetals;
+            statusText.innerText = "點擊花瓣開始占卜";
+            statusText.style.color = "#ff477e";
+            restartBtn.style.display = 'none';
+
+            // 亂數決定這一次總體是愛還是不愛（讓結果每次都不同）
+            // 由於每次點擊會切換狀態，我們倒推第一步的狀態
+            const finalLove = Math.random() > 0.5;
+            // 確保最後一片拔完的狀態符合 finalLove
+            currentState = (totalPetals % 2 === 1) ? !finalLove : finalLove;
+
+            // 動態生成花瓣並旋轉成一朵花
+            for (let i = 0; i < totalPetals; i++) {
+                const petal = document.createElement('div');
+                petal.classList.add('petal');
+                
+                // 計算每片花瓣的角度
+                const angle = (360 / totalPetals) * i;
+                petal.style.transform = `rotate(${angle}deg)`;
+
+                // 綁定點擊事件
+                petal.addEventListener('click', function() {
+                    if (!petal.classList.contains('detached')) {
+                        petal.classList.add('detached');
+                        remainingPetals--;
+                        
+                        // 切換狀態
+                        currentState = !currentState;
+                        
+                        if (remainingPetals > 0) {
+                            statusText.innerText = currentState ? "愛我..." : "不愛我...";
+                        } else {
+                            // 拔完了，顯示最終結果！
+                            if (currentState) {
+                                statusText.innerText = "❤️ 恭喜！他/她超級愛你！ ❤️";
+                                statusText.style.color = "#d90429";
+                            } else {
+                                statusText.innerText = "💔 哎呀...看來可能只是錯覺？ 💔";
+                                statusText.style.color = "#6c757d";
+                            }
+                            restartBtn.style.display = 'block';
+                        }
+                    }
+                });
+
+                flower.appendChild(petal);
+            }
+        }
+
+        // 網頁載入時初始化
+        initFlower();
+    </script>
+</body>
+</html>
