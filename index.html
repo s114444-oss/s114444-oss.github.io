@@ -14,11 +14,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>戀愛占卜：拔花瓣模擬器</title>
+    <title>神祕塔羅：命運占卜模擬器</title>
     <style>
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            /* 【修改】換成更柔和、淡雅的藍綠色系漸層背景 */
+            /* 延續你最愛的淡色系藍綠色漸層 */
             background: linear-gradient(135deg, #e8f7f5, #d1eee9);
             display: flex;
             flex-direction: column;
@@ -31,211 +31,288 @@
 
         h1 {
             color: #3b7a71;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
         }
 
         .subtitle {
             font-size: 1.1rem;
             color: #5c8b83;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
-        /* 花朵容器 */
-        .flower-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin-bottom: 50px;
+        /* 牌陣容器 */
+        .card-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            min-height: 260px;
+            margin-bottom: 30px;
         }
 
-        /* 花蕊 */
-        .flower-center {
-            position: absolute;
-            top: 75px;
-            left: 75px;
-            width: 50px;
-            height: 50px;
-            background-color: #ffd166; /* 溫柔的蛋黃色花蕊 */
-            border-radius: 50%;
-            z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-        }
-
-        /* 花瓣通用樣式（初始顏色會由 JavaScript 動態寫入） */
-        .petal {
-            position: absolute;
-            height: 80px;
-            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-            top: 10px;
-            transform-origin: center 90px;
+        /* 塔羅牌基本樣式 */
+        .tarot-card {
+            width: 140px;
+            height: 240px;
+            background: linear-gradient(135deg, #4d968b, #2c4a46); /* 神祕深藍綠牌背 */
+            border: 3px solid #ffd166; /* 金邊框 */
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.5s ease-out, width 0.2s, background 0.1s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease, box-shadow 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .petal:hover {
-            filter: brightness(1.08);
+        /* 牌背的花紋花絮 */
+        .tarot-card::before {
+            content: "✨";
+            font-size: 2rem;
+            color: #ffd166;
+            opacity: 0.8;
         }
 
-        /* 【核心功能】被拔掉且是乾枯的花瓣，強制覆蓋成乾枯的咖啡色 */
-        .petal.detached.reveal-withered {
-            background: linear-gradient(to bottom, #a98467, #6c584c) !important;
+        .tarot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.2);
+            filter: brightness(1.1);
         }
 
-        /* 花瓣消失動畫 */
-        .petal.detached {
-            opacity: 0;
-            transform: translateY(120px) rotate(45deg) scale(0.7) !important;
-            pointer-events: none;
+        /* 牌面翻開後的樣式 */
+        .tarot-card.flipped {
+            background: #ffffff !important;
+            color: #2c4a46;
+            transform: rotateY(180deg);
+            cursor: default;
         }
 
-        /* 顯示訊息的區塊 */
+        /* 翻牌後的內文修正（因為 Y 軸轉了 180 度，字要轉回來） */
+        .tarot-card.flipped .card-content {
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* 逆位牌的倒轉視覺 */
+        .tarot-card.flipped.reversed .card-content {
+            transform: rotateY(180deg) rotate(180deg);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #3b7a71;
+            margin-bottom: 10px;
+        }
+
+        .card-orientation {
+            font-size: 0.85rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .orientation-upright {
+            background-color: #d1eee9;
+            color: #2c4a46;
+        }
+
+        .orientation-reversed {
+            background-color: #f7e1d7;
+            color: #7f5539;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        /* 隱藏未翻牌時的正面內容 */
+        .card-content {
+            display: none;
+        }
+
+        /* 狀態文字與按鈕 */
         #status-text {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #3b7a71;
             min-height: 40px;
             text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
         }
 
-        /* 重來按鈕 */
-        #restart-btn {
-            margin-top: 20px;
-            padding: 10px 25px;
+        .btn {
+            margin-top: 25px;
+            padding: 12px 30px;
             font-size: 1rem;
+            font-weight: bold;
             background-color: #3b7a71;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
 
-        #restart-btn:hover {
+        .btn:hover {
             background-color: #4d968b;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 洗牌時的卡片晃動動畫 */
+        @keyframes shuffle {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-30px) rotate(-5deg); }
+            50% { transform: translateX(30px) rotate(5deg); }
+            75% { transform: translateX(-15px) rotate(-3deg); }
+            100% { transform: translateX(0); }
+        }
+
+        .shuffling {
+            animation: shuffle 0.5s ease-in-out infinite;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <h1>他/她到底愛不愛我？</h1>
-    <div class="subtitle">點擊花瓣，讓命運來決定...</div>
+    <h1>神祕塔羅占卜</h1>
+    <div class="subtitle">心中默念你的選擇障礙，並挑選一張命運卡牌...</div>
 
-    <div class="flower-container" id="flower">
-        <div class="flower-center"></div>
-        </div>
+    <div class="card-container" id="card-deck">
+        <div class="tarot-card" onclick="drawCard(this)"></div>
+        <div class="tarot-card" onclick="drawCard(this)"></div>
+        <div class="tarot-card" onclick="drawCard(this)"></div>
+    </div>
 
-    <div id="status-text">點擊花瓣開始占卜</div>
-    <button id="restart-btn" onclick="initFlower()">再測一次</button>
+    <div id="status-text">請點擊下方按鈕開始洗牌</div>
+    <button class="btn" id="action-btn" onclick="startShuffle()">開始洗牌</button>
 
     <script>
-        const flower = document.getElementById('flower');
+        const cardDeck = document.getElementById('card-deck');
+        const cards = document.querySelectorAll('.tarot-card');
         const statusText = document.getElementById('status-text');
-        const restartBtn = document.getElementById('restart-btn');
-        
-        let totalPetals; 
-        let remainingPetals;
-        let currentState = true;
+        const actionBtn = document.getElementById('action-btn');
 
-        // 【新增】產生隨機好看顏色的函式（利用 HSL 確保顏色明亮柔和，不會調出髒髒的顏色）
-        function getRandomFlowerColor() {
-            const randomHue = Math.floor(Math.random() * 360); // 隨機色相 0~360
-            // 調配出漸層的亮部與暗部
-            const colorTop = `hsl(${randomHue}, 75%, 70%)`;
-            const colorBottom = `hsl(${randomHue}, 80%, 50%)`;
-            return `linear-gradient(to bottom, ${colorTop}, ${colorBottom})`;
+        let isShuffled = false;
+        let isGameActive = false;
+
+        // 核心牌組定義（你可以隨意更換裏面的字或結果）
+        const tarotPool = [
+            { name: "【0. 愚者】", icon: "🎒", upright: "✨ 命運直覺：大膽去做吧！別想太多，踏出第一步就對了！", reversed: "🍂 命運模糊：目前時機充滿盲目與衝動，暫停一下，請重新洗牌。" },
+            { name: "【I. 魔術師】", icon: "🪄", upright: "✨ 命運直覺：你擁有解決問題的完美能力，選你想選的，絕對成功！", reversed: "🍂 命運模糊：計畫似乎有漏洞，或是有人在隱瞞，請重新洗牌。" },
+            { name: "// 【II. 女祭司】", name: "【II. 女祭司】", icon: "🌙", upright: "✨ 命運直覺：聽從你內心深處的第一直覺，答案其實你早就知道了。", reversed: "🍂 命運模糊：思緒太過焦慮浮躁，目前無法看清真相，請重新洗牌。" },
+            { name: "【VI. 戀人】", icon: "💞", upright: "✨ 命運直覺：這是一個充滿好運的決定！兩者結合或順應情感去選吧！", reversed: "🍂 命運模糊：正面臨左右為難的利益衝突，心意不合，請重新洗牌。" },
+            { name: "【XIII. 死神】", icon: "💀", upright: "✨ 命運直覺：舊的不去新的不來！果斷放棄過去的執著，迎向新起點吧。", reversed: "🍂 命運模糊：你在抗拒改變，內心在逃避，命運陷入膠著，請重新洗牌。" }
+        ];
+
+        // 隨機色票：每場洗牌後，卡片背面會有微微不同的神祕漸層色
+        function getRandomBg() {
+            const hues = [160, 180, 200, 220, 280]; // 藍綠色系到神祕紫色系
+            const randomHue = hues[Math.floor(Math.random() * hues.length)];
+            return `linear-gradient(135deg, hsl(${randomHue}, 45%, 40%), hsl(${randomHue}, 50%, 20%))`;
         }
 
-        function initFlower() {
-            const oldPetals = document.querySelectorAll('.petal');
-            oldPetals.forEach(p => p.remove());
-
-            // 隨機範圍：4 到 30 片
-            totalPetals = Math.floor(Math.random() * (30 - 4 + 1)) + 4; 
-            remainingPetals = totalPetals;
-
-            // 動態計算花瓣寬度與位置
-            const petalWidth = Math.max(12, Math.min(50, 350 / totalPetals));
-            const petalLeft = 100 - (petalWidth / 2);
-
-            // 【核心修改】這一場比賽專屬的花瓣隨機顏色
-            const currentFlowerColor = getRandomFlowerColor();
-
-            statusText.innerText = "點擊花瓣開始占卜";
+        // 開始洗牌
+        function startShuffle() {
+            isShuffled = false;
+            isGameActive = false;
+            statusText.innerText = "🔮 正在凝聚星象能量，洗牌中...";
             statusText.style.color = "#3b7a71";
-            restartBtn.style.display = 'none';
+            actionBtn.style.display = "none";
 
-            const finalLove = Math.random() > 0.5;
-            currentState = (totalPetals % 2 === 1) ? !finalLove : finalLove;
+            // 重置所有卡片狀態
+            cards.forEach(card => {
+                card.classList.remove('flipped', 'reversed');
+                card.style.background = getRandomBg();
+                card.innerHTML = ''; 
+                card.classList.add('shuffling');
+            });
 
-            for (let i = 0; i < totalPetals; i++) {
-                const petal = document.createElement('div');
-                petal.classList.add('petal');
-                
-                // 套用這場隨機抽到的健康花瓣顏色
-                petal.style.background = currentFlowerColor;
-                
-                // 隱藏乾枯花瓣，只記錄在內建資料中
-                const isWithered = Math.random() < 0.20; 
-                if (isWithered) {
-                    petal.dataset.type = 'withered';
-                } else {
-                    petal.dataset.type = 'normal';
-                }
-                
-                petal.style.width = `${petalWidth}px`;
-                petal.style.left = `${petalLeft}px`;
-                
-                const angle = (360 / totalPetals) * i;
-                petal.style.transform = `rotate(${angle}deg)`;
-
-                petal.addEventListener('click', function() {
-                    if (!petal.classList.contains('detached')) {
-                        const myType = petal.dataset.type;
-                        
-                        if (myType === 'withered') {
-                            petal.classList.add('reveal-withered');
-                        }
-                        
-                        petal.classList.add('detached');
-                        remainingPetals--;
-                        
-                        currentState = !currentState;
-                        
-                        if (remainingPetals > 0) {
-                            if (myType === 'withered') {
-                                statusText.innerText = "🪺 呃...這瓣居然是乾枯的...";
-                            } else {
-                                statusText.innerText = currentState ? "愛我..." : "不愛我...";
-                            }
-                        } else {
-                            if (myType === 'withered') {
-                                statusText.innerText = "🍂 哎呀！最後一片是乾枯花瓣，命運模糊不清...請再測一次！ 🍂";
-                                statusText.style.color = "#6c584c";
-                                restartBtn.innerText = "重新占卜";
-                            } else {
-                                if (currentState) {
-                                    statusText.innerText = "✨ 命運解答：他/她超級愛你！ ✨";
-                                    statusText.style.color = "#1d4d44";
-                                } else {
-                                    statusText.innerText = "🌫️ 命運解答：看來可能只是錯覺？ 🌫️";
-                                    statusText.style.color = "#64748b";
-                                }
-                                restartBtn.innerText = "再測一次";
-                            }
-                            restartBtn.style.display = 'block';
-                        }
-                    }
+            // 模擬洗牌動態 1.5 秒
+            setTimeout(() => {
+                cards.forEach(card => {
+                    card.classList.remove('shuffling');
                 });
-
-                flower.appendChild(petal);
-            }
+                statusText.innerText = "✨ 洗牌完成！請在上方三張牌中，憑直覺盲選一張。";
+                isShuffled = true;
+                isGameActive = true;
+            }, 1500);
         }
 
-        initFlower();
+        // 抽牌邏輯
+        function drawCard(selectedCard) {
+            // 沒洗牌，或是已經抽過牌了就不能重複點擊
+            if (!isShuffled || !isGameActive) return;
+            isGameActive = false; // 鎖定點擊
+
+            // 隨機從牌組池抽一張牌，並且隨機決定正逆位 (50% 機率)
+            const randomTarot = tarotPool[Math.floor(Math.random() * tarotPool.length)];
+            const isReversed = Math.random() < 0.50; // 50% 機率逆位（等同於先前的乾枯花瓣）
+
+            // 建立牌面 HTML 結構
+            selectedCard.innerHTML = `
+                <div class="card-content">
+                    <div class="card-icon">${randomTarot.icon}</div>
+                    <div class="card-title">${randomTarot.name}</div>
+                    <div class="card-orientation ${isReversed ? 'orientation-reversed' : 'orientation-upright'}">
+                        ${isReversed ? '【 逆 位 】' : '【 正 位 】'}
+                    </div>
+                </div>
+            `;
+
+            // 動態塞入文字並顯示
+            const cardContent = selectedCard.querySelector('.card-content');
+            cardContent.style.display = 'flex';
+
+            // 觸發翻牌 CSS 動畫
+            if (isReversed) {
+                selectedCard.classList.add('flipped', 'reversed');
+                // 【核心機制】如果抽到逆位（乾枯花瓣），必須再測一次
+                statusText.innerText = randomTarot.reversed;
+                statusText.style.color = "#7f5539";
+                actionBtn.innerText = "命運模糊，重新洗牌";
+            } else {
+                selectedCard.classList.add('flipped');
+                // 正位，給予直覺解答
+                statusText.innerText = randomTarot.upright;
+                statusText.style.color = "#1d4d44";
+                actionBtn.innerText = "再次占卜";
+            }
+
+            // 讓其他沒被選中的卡片變得稍微透明
+            cards.forEach(card => {
+                if (card !== selectedCard) {
+                    card.style.opacity = "0.4";
+                }
+            });
+            // 恢復沒被點中的牌不可以點
+            selectedCard.style.opacity = "1";
+
+            // 顯示重來按鈕
+            actionBtn.style.display = "inline-block";
+        }
+
+        // 網頁開啟時，提示使用者洗牌
+        cards.forEach(card => card.style.background = 'linear-gradient(135deg, #a3b8b5, #7a9490)');
     </script>
 </body>
 </html>
