@@ -6,8 +6,7 @@
     <link rel="icon" href="main.png">
   </head>
   <body>
-    hello world!
-    = =
+    have a nice day
   </body>
 </html>
 <!DOCTYPE html>
@@ -19,25 +18,26 @@
     <style>
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, #ffe5ec, #ffc2d1);
+            /* 【修改】換成更柔和、淡雅的藍綠色系漸層背景 */
+            background: linear-gradient(135deg, #e8f7f5, #d1eee9);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            color: #4a4a4a;
+            color: #2c4a46;
         }
 
         h1 {
-            color: #ff477e;
+            color: #3b7a71;
             margin-bottom: 10px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
         }
 
         .subtitle {
             font-size: 1.1rem;
-            color: #7a7a7a;
+            color: #5c8b83;
             margin-bottom: 40px;
         }
 
@@ -56,34 +56,31 @@
             left: 75px;
             width: 50px;
             height: 50px;
-            background-color: #ffe600;
+            background-color: #ffd166; /* 溫柔的蛋黃色花蕊 */
             border-radius: 50%;
             z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
         }
 
-        /* 花瓣通用樣式 */
+        /* 花瓣通用樣式（初始顏色會由 JavaScript 動態寫入） */
         .petal {
             position: absolute;
             height: 80px;
-            background: linear-gradient(to bottom, #ff85a2, #ff477e);
             border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
             top: 10px;
             transform-origin: center 90px;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.5s ease-out, width 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* 【新增】乾枯花瓣的樣式（咖啡色系、微微內縮營造乾癟感） */
-        .petal.withered {
-            background: linear-gradient(to bottom, #b5835a, #7f5539);
-            border-radius: 40% 40% 50% 50% / 30% 30% 70% 70%;
-            transform: scaleX(0.9);
+            transition: transform 0.2s, opacity 0.5s ease-out, width 0.2s, background 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
 
         .petal:hover {
-            filter: brightness(1.1);
+            filter: brightness(1.08);
+        }
+
+        /* 【核心功能】被拔掉且是乾枯的花瓣，強制覆蓋成乾枯的咖啡色 */
+        .petal.detached.reveal-withered {
+            background: linear-gradient(to bottom, #a98467, #6c584c) !important;
         }
 
         /* 花瓣消失動畫 */
@@ -97,7 +94,7 @@
         #status-text {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #ff477e;
+            color: #3b7a71;
             min-height: 40px;
             text-align: center;
         }
@@ -107,7 +104,7 @@
             margin-top: 20px;
             padding: 10px 25px;
             font-size: 1rem;
-            background-color: #ff477e;
+            background-color: #3b7a71;
             color: white;
             border: none;
             border-radius: 25px;
@@ -118,7 +115,7 @@
         }
 
         #restart-btn:hover {
-            background-color: #ff7096;
+            background-color: #4d968b;
         }
     </style>
 </head>
@@ -143,6 +140,15 @@
         let remainingPetals;
         let currentState = true;
 
+        // 【新增】產生隨機好看顏色的函式（利用 HSL 確保顏色明亮柔和，不會調出髒髒的顏色）
+        function getRandomFlowerColor() {
+            const randomHue = Math.floor(Math.random() * 360); // 隨機色相 0~360
+            // 調配出漸層的亮部與暗部
+            const colorTop = `hsl(${randomHue}, 75%, 70%)`;
+            const colorBottom = `hsl(${randomHue}, 80%, 50%)`;
+            return `linear-gradient(to bottom, ${colorTop}, ${colorBottom})`;
+        }
+
         function initFlower() {
             const oldPetals = document.querySelectorAll('.petal');
             oldPetals.forEach(p => p.remove());
@@ -155,8 +161,11 @@
             const petalWidth = Math.max(12, Math.min(50, 350 / totalPetals));
             const petalLeft = 100 - (petalWidth / 2);
 
+            // 【核心修改】這一場比賽專屬的花瓣隨機顏色
+            const currentFlowerColor = getRandomFlowerColor();
+
             statusText.innerText = "點擊花瓣開始占卜";
-            statusText.style.color = "#ff477e";
+            statusText.style.color = "#3b7a71";
             restartBtn.style.display = 'none';
 
             const finalLove = Math.random() > 0.5;
@@ -166,12 +175,13 @@
                 const petal = document.createElement('div');
                 petal.classList.add('petal');
                 
-                // 【核心修改】隨機讓某些花瓣變成乾枯花瓣（這裡設定 20% 的機率是乾枯的）
-                // 且為了好玩，至少確保總片數大於 5 時，有機會出現乾枯花瓣
+                // 套用這場隨機抽到的健康花瓣顏色
+                petal.style.background = currentFlowerColor;
+                
+                // 隱藏乾枯花瓣，只記錄在內建資料中
                 const isWithered = Math.random() < 0.20; 
                 if (isWithered) {
-                    petal.classList.add('withered');
-                    petal.dataset.type = 'withered'; // 標記它是乾枯的
+                    petal.dataset.type = 'withered';
                 } else {
                     petal.dataset.type = 'normal';
                 }
@@ -184,34 +194,35 @@
 
                 petal.addEventListener('click', function() {
                     if (!petal.classList.contains('detached')) {
-                        const myType = petal.dataset.type; // 記錄被拔掉的這片是什麼類型
+                        const myType = petal.dataset.type;
+                        
+                        if (myType === 'withered') {
+                            petal.classList.add('reveal-withered');
+                        }
+                        
                         petal.classList.add('detached');
                         remainingPetals--;
                         
                         currentState = !currentState;
                         
                         if (remainingPetals > 0) {
-                            // 拔的過程中，如果是乾枯的，給個小吐槽，否則正常顯示
                             if (myType === 'withered') {
-                                statusText.innerText = "🪺 呃...這瓣乾枯了...";
+                                statusText.innerText = "🪺 呃...這瓣居然是乾枯的...";
                             } else {
                                 statusText.innerText = currentState ? "愛我..." : "不愛我...";
                             }
                         } else {
-                            // 【核心修改】最後一片被拔完後的判定邏輯
                             if (myType === 'withered') {
-                                // 命中注定：最後一片是乾枯的！
                                 statusText.innerText = "🍂 哎呀！最後一片是乾枯花瓣，命運模糊不清...請再測一次！ 🍂";
-                                statusText.style.color = "#7f5539";
+                                statusText.style.color = "#6c584c";
                                 restartBtn.innerText = "重新占卜";
                             } else {
-                                // 正常結局
                                 if (currentState) {
-                                    statusText.innerText = "❤️ 恭喜！他/她超級愛你！ ❤️";
-                                    statusText.style.color = "#d90429";
+                                    statusText.innerText = "✨ 命運解答：他/她超級愛你！ ✨";
+                                    statusText.style.color = "#1d4d44";
                                 } else {
-                                    statusText.innerText = "💔 哎呀...看來可能只是錯覺？ 💔";
-                                    statusText.style.color = "#6c757d";
+                                    statusText.innerText = "🌫️ 命運解答：看來可能只是錯覺？ 🌫️";
+                                    statusText.style.color = "#64748b";
                                 }
                                 restartBtn.innerText = "再測一次";
                             }
